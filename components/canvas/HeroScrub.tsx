@@ -9,32 +9,51 @@ import { cn } from "@/lib/utils";
 gsap.registerPlugin(ScrollTrigger);
 
 const FRAME_COUNT = 96;
+// How long (ms) to wait for probe metadata before giving up and using autoplay.
+const PROBE_TIMEOUT_MS = 4000;
 
-type Mode = "loading" | "frames" | "video" | "autoplay" | "fallback";
+type Mode = "loading" | "frames" | "autoplay" | "fallback";
 
 interface HeroScrubProps {
   triggerRef: React.RefObject<HTMLElement | null>;
 }
 
-/** Returns true on touch/mobile devices where seek-scrub is blocked by browsers. */
-function isMobileDevice() {
+/**
+ * True on any touch/mobile/tablet device.
+ * iOS Safari never fires onloadedmetadata for off-DOM programmatic videos,
+ * so we must detect and skip the probe entirely on mobile.
+ */
+function isMobile() {
   if (typeof window === "undefined") return false;
+  // Covers iPhone, iPad (including iPad that reports MacIntel), Android, etc.
   return (
-    "ontouchstart" in window ||
+    /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
     navigator.maxTouchPoints > 0 ||
     window.matchMedia("(pointer: coarse)").matches
   );
 }
 
+/** Pick the first non-empty source from the list. */
+function firstSource() {
+  return (
+    [media.heroOrbit.local, media.heroOrbit.remote].find(Boolean) ?? null
+  );
+}
+
 /**
  * Scroll-scrubbed hero orbit.
- * Source priority: local /media/hero-orbit.mp4 → hosted CDN URL.
- * Render priority:
- *  1. "frames"   — extract 96 frames to ImageBitmaps, scrub with cross-fade
- *                  interpolation (requires CORS-readable video). Desktop only.
- *  2. "video"    — seek-scrubbed <video> element (works without CORS). Desktop only.
- *  3. "autoplay" — autoplay loop video for mobile/tablet (seeking is blocked on mobile).
- *  4. "fallback" — ambient emerald void if no source is reachable.
+ *
+ * Render path decision:
+ *  • Mobile / tablet / iOS  →  "autoplay"  immediately — no probe, no seek.
+ *    iOS Safari never fires onloadedmetadata for off-DOM video elements and
+ *    blocks all programmatic seeking. The only reliable path is a native
+ *    <video autoPlay loop muted playsInline> rendered straight into the DOM.
+ *
+ *  • Desktop                →  probe → extract 96 ImageBitmap frames → "frames"
+ *                               if that fails → "autoplay" (safe universal fallback)
+ *
+ *  • No source reachable    →  "fallback" (ambient glow only)
  */
 export function HeroScrub({ triggerRef }: HeroScrubProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,17 +64,31 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
 
-  // 1) Resolve a playable source, then try frame extraction.
+  // ─── 1. Source resolution ────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
+
+    // ── Mobile / iOS: skip probe entirely. ──────────────────────────────────
+    // iOS Safari never fires onloadedmetadata for off-DOM programmatic videos.
+    // Just hand the src straight to the <video> element in the DOM.
+    if (isMobile()) {
+      const src = firstSource();
+      if (src) {
+        setVideoSrc(src);
+        setMode("autoplay");
+      } else {
+        setMode("fallback");
+      }
+      return;
+    }
+
+    // ── Desktop: probe → frame extract → fallback to autoplay ───────────────
     const sources = [media.heroOrbit.local, media.heroOrbit.remote].filter(Boolean);
-    const mobile = isMobileDevice();
 
     const probe = (src: string) =>
       new Promise<HTMLVideoElement>((resolve, reject) => {
         const v = document.createElement("video");
-        // Only set crossOrigin for remote/CDN sources — local Next.js static files
-        // don't send CORS headers, so crossOrigin=anonymous makes them fail silently.
+        // No crossOrigin for local paths — Next.js static files have no CORS headers.
         if (src.startsWith("http")) v.crossOrigin = "anonymous";
         v.muted = true;
         v.playsInline = true;
@@ -63,6 +96,8 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
         v.onloadedmetadata = () => resolve(v);
         v.onerror = () => reject(new Error("unreachable"));
         v.src = src;
+        // Safety timeout — don't hang forever if the browser stalls.
+        setTimeout(() => reject(new Error("timeout")), PROBE_TIMEOUT_MS);
       });
 
     const extract = async (video: HTMLVideoElement) => {
@@ -79,7 +114,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
         const t = (i / (FRAME_COUNT - 1)) * Math.max(duration - 0.05, 0);
         await seek(video, t);
         octx.drawImage(video, 0, 0, off.width, off.height);
-        frames.push(await createImageBitmap(off)); // throws if canvas is tainted
+        frames.push(await createImageBitmap(off));
       }
       return frames;
     };
@@ -88,17 +123,6 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
       for (const src of sources) {
         try {
           const video = await probe(src);
-
-          // On mobile/tablet: seeking is blocked by browsers — use autoplay loop.
-          if (mobile) {
-            if (!cancelled) {
-              setVideoSrc(src);
-              setMode("autoplay");
-              return;
-            }
-          }
-
-          // Desktop: try frame extraction first (best quality).
           try {
             const frames = await extract(video);
             if (frames && !cancelled) {
@@ -107,19 +131,16 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
               return;
             }
           } catch {
-            // Frame extraction failed (canvas taint / CORS) → fallback to autoplay.
-            // We use autoplay here too instead of seek-scrub because seek-scrub
-            // also relies on the same CORS-readable video that just failed.
+            // Frame extraction failed (canvas taint / CORS) — use autoplay.
           }
-
-          // Autoplay loop works without CORS on any device.
+          // Autoplay works without CORS on any device.
           if (!cancelled) {
             setVideoSrc(src);
             setMode("autoplay");
             return;
           }
         } catch {
-          // source unreachable — try next
+          // Source unreachable or timed-out — try next.
         }
       }
       if (!cancelled) setMode("fallback");
@@ -132,9 +153,9 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     };
   }, []);
 
-  // 2) Scroll progress binding (desktop seek modes only).
+  // ─── 2. Scroll progress (desktop frames mode only) ──────────────────────
   useEffect(() => {
-    if (isMobileDevice()) return;
+    if (mode !== "frames") return;
     const trigger = triggerRef.current;
     if (!trigger) return;
     const st = ScrollTrigger.create({
@@ -146,10 +167,9 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
       },
     });
     return () => st.kill();
-  }, [triggerRef]);
+  }, [mode, triggerRef]);
 
-  // 3) Draw loop for frames mode. The ambient CSS layer covers loading/fallback,
-  // so this only ever needs to paint once real frames exist.
+  // ─── 3. Canvas draw loop (frames mode) ──────────────────────────────────
   useEffect(() => {
     if (mode !== "frames") return;
     const canvas = canvasRef.current;
@@ -171,7 +191,6 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
         (progress.current.value - progress.current.smoothed) * 0.14;
       const frames = framesRef.current;
       const { width: w, height: h } = canvas;
-
       if (frames.length > 1) {
         const exact = progress.current.smoothed * (frames.length - 1);
         const i = Math.floor(exact);
@@ -201,39 +220,26 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     };
   }, [mode]);
 
-  // 3b) Fade the real content in smoothly once it's ready, instead of popping in.
+  // ─── 4. Fade in once ready ───────────────────────────────────────────────
   useEffect(() => {
-    if (mode !== "frames" && mode !== "video" && mode !== "autoplay") return;
+    if (mode !== "frames" && mode !== "autoplay") return;
     const id = requestAnimationFrame(() => setRevealed(true));
     return () => cancelAnimationFrame(id);
   }, [mode]);
 
-  // 4) Seek loop for video mode (no CORS needed).
-  useEffect(() => {
-    if (mode !== "video") return;
-    const v = videoElRef.current;
-    if (!v) return;
-    let rafId = 0;
-    const tick = () => {
-      progress.current.smoothed +=
-        (progress.current.value - progress.current.smoothed) * 0.14;
-      if (v.duration && Number.isFinite(v.duration)) {
-        const t = progress.current.smoothed * Math.max(v.duration - 0.05, 0);
-        if (Math.abs(v.currentTime - t) > 0.033) v.currentTime = t;
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [mode]);
-
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="absolute inset-0">
-      {/* Ambient backdrop — present from first paint so there's nothing to "pop" in from. */}
+      {/* Ambient glow — always visible so there's no "pop" on first paint */}
       <div className="hero-ambient absolute inset-0" />
 
-      {/* Mobile/tablet: autoplay looping video (seeking is blocked on mobile browsers) */}
       {mode === "autoplay" && videoSrc ? (
+        /**
+         * Mobile / iOS / desktop fallback:
+         * autoPlay + loop + muted + playsInline is the only combination that
+         * works reliably across all browsers without user gesture.
+         * On iOS this MUST be rendered in the real DOM (not created via JS).
+         */
         <video
           ref={videoElRef}
           src={videoSrc}
@@ -248,22 +254,8 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
             revealed && "opacity-100"
           )}
         />
-      ) : mode === "video" && videoSrc ? (
-        /* Desktop seek-scrub video */
-        <video
-          ref={videoElRef}
-          src={videoSrc}
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden
-          className={cn(
-            "will-transform absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[1400ms] ease-out",
-            revealed && "opacity-100"
-          )}
-        />
       ) : (
-        /* Desktop canvas frames */
+        /* Desktop: canvas frame scrub */
         <canvas
           ref={canvasRef}
           aria-hidden
