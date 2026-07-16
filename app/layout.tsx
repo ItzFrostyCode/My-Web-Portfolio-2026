@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { BackToTop } from "@/components/ui/BackToTop";
 import { Header } from "@/components/ui/Header";
+import { SITE_URL } from "@/content/site";
 import "./globals.css";
 
 const anton = localFont({
@@ -30,7 +31,8 @@ const jetbrains = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Joshua Wayman A. Arabejo — Aspiring Full-Stack Dev & UI UX Designer & UI UX Designer",
+  metadataBase: new URL(SITE_URL),
+  title: "Joshua Wayman A. Arabejo — Aspiring Full-Stack Dev & UI UX Designer",
   description:
     "Aspiring Full-Stack Dev & UI UX Designer crafting modern, scalable, and user-focused digital experiences. BSIT student passionate about web applications, UI/UX, and clean architecture.",
   keywords: [
@@ -46,6 +48,7 @@ export const metadata: Metadata = {
     title: "Joshua Wayman A. Arabejo — Aspiring Full-Stack Dev & UI UX Designer",
     description:
       "Aspiring Full-Stack Dev & UI UX Designer crafting modern, scalable, and user-focused digital experiences.",
+    url: SITE_URL,
     type: "website",
   },
 };
