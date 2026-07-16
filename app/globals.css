@@ -19,6 +19,7 @@ html {
   background: var(--color-ink);
   color: var(--color-cream);
   scroll-behavior: auto; /* Lenis owns scrolling */
+  overflow-x: hidden; /* Prevent white bleed on diagonal/touch scroll */
 }
 
 html.lenis,

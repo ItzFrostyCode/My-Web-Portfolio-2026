@@ -54,7 +54,9 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     const probe = (src: string) =>
       new Promise<HTMLVideoElement>((resolve, reject) => {
         const v = document.createElement("video");
-        v.crossOrigin = "anonymous";
+        // Only set crossOrigin for remote/CDN sources — local Next.js static files
+        // don't send CORS headers, so crossOrigin=anonymous makes them fail silently.
+        if (src.startsWith("http")) v.crossOrigin = "anonymous";
         v.muted = true;
         v.playsInline = true;
         v.preload = "auto";
@@ -87,7 +89,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
         try {
           const video = await probe(src);
 
-          // On mobile, seeking is blocked — go straight to autoplay loop.
+          // On mobile/tablet: seeking is blocked by browsers — use autoplay loop.
           if (mobile) {
             if (!cancelled) {
               setVideoSrc(src);
@@ -96,6 +98,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
             }
           }
 
+          // Desktop: try frame extraction first (best quality).
           try {
             const frames = await extract(video);
             if (frames && !cancelled) {
@@ -104,12 +107,16 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
               return;
             }
           } catch {
-            // CORS-tainted or bitmap failure → seek-scrub the video element.
-            if (!cancelled) {
-              setVideoSrc(src);
-              setMode("video");
-              return;
-            }
+            // Frame extraction failed (canvas taint / CORS) → fallback to autoplay.
+            // We use autoplay here too instead of seek-scrub because seek-scrub
+            // also relies on the same CORS-readable video that just failed.
+          }
+
+          // Autoplay loop works without CORS on any device.
+          if (!cancelled) {
+            setVideoSrc(src);
+            setMode("autoplay");
+            return;
           }
         } catch {
           // source unreachable — try next
