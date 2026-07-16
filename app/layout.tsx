@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { BackToTop } from "@/components/ui/BackToTop";
 import { Header } from "@/components/ui/Header";
@@ -68,6 +69,7 @@ export default function RootLayout({
         <Header />
         <SmoothScroll>{children}</SmoothScroll>
         <BackToTop />
+        <Analytics />
       </body>
     </html>
   );
