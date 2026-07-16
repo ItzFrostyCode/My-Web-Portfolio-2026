@@ -10,20 +10,31 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FRAME_COUNT = 96;
 
-type Mode = "loading" | "frames" | "video" | "fallback";
+type Mode = "loading" | "frames" | "video" | "autoplay" | "fallback";
 
 interface HeroScrubProps {
   triggerRef: React.RefObject<HTMLElement | null>;
+}
+
+/** Returns true on touch/mobile devices where seek-scrub is blocked by browsers. */
+function isMobileDevice() {
+  if (typeof window === "undefined") return false;
+  return (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    window.matchMedia("(pointer: coarse)").matches
+  );
 }
 
 /**
  * Scroll-scrubbed hero orbit.
  * Source priority: local /media/hero-orbit.mp4 → hosted CDN URL.
  * Render priority:
- *  1. "frames"  — extract 96 frames to ImageBitmaps, scrub with cross-fade
- *                 interpolation (requires CORS-readable video).
- *  2. "video"   — seek-scrubbed <video> element (works without CORS).
- *  3. "fallback" — ambient emerald void if no source is reachable.
+ *  1. "frames"   — extract 96 frames to ImageBitmaps, scrub with cross-fade
+ *                  interpolation (requires CORS-readable video). Desktop only.
+ *  2. "video"    — seek-scrubbed <video> element (works without CORS). Desktop only.
+ *  3. "autoplay" — autoplay loop video for mobile/tablet (seeking is blocked on mobile).
+ *  4. "fallback" — ambient emerald void if no source is reachable.
  */
 export function HeroScrub({ triggerRef }: HeroScrubProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,6 +49,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
   useEffect(() => {
     let cancelled = false;
     const sources = [media.heroOrbit.local, media.heroOrbit.remote].filter(Boolean);
+    const mobile = isMobileDevice();
 
     const probe = (src: string) =>
       new Promise<HTMLVideoElement>((resolve, reject) => {
@@ -74,6 +86,16 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
       for (const src of sources) {
         try {
           const video = await probe(src);
+
+          // On mobile, seeking is blocked — go straight to autoplay loop.
+          if (mobile) {
+            if (!cancelled) {
+              setVideoSrc(src);
+              setMode("autoplay");
+              return;
+            }
+          }
+
           try {
             const frames = await extract(video);
             if (frames && !cancelled) {
@@ -103,8 +125,9 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     };
   }, []);
 
-  // 2) Scroll progress binding.
+  // 2) Scroll progress binding (desktop seek modes only).
   useEffect(() => {
+    if (isMobileDevice()) return;
     const trigger = triggerRef.current;
     if (!trigger) return;
     const st = ScrollTrigger.create({
@@ -173,7 +196,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
 
   // 3b) Fade the real content in smoothly once it's ready, instead of popping in.
   useEffect(() => {
-    if (mode !== "frames" && mode !== "video") return;
+    if (mode !== "frames" && mode !== "video" && mode !== "autoplay") return;
     const id = requestAnimationFrame(() => setRevealed(true));
     return () => cancelAnimationFrame(id);
   }, [mode]);
@@ -202,7 +225,24 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
       {/* Ambient backdrop — present from first paint so there's nothing to "pop" in from. */}
       <div className="hero-ambient absolute inset-0" />
 
-      {mode === "video" && videoSrc ? (
+      {/* Mobile/tablet: autoplay looping video (seeking is blocked on mobile browsers) */}
+      {mode === "autoplay" && videoSrc ? (
+        <video
+          ref={videoElRef}
+          src={videoSrc}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden
+          className={cn(
+            "will-transform absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[1400ms] ease-out",
+            revealed && "opacity-100"
+          )}
+        />
+      ) : mode === "video" && videoSrc ? (
+        /* Desktop seek-scrub video */
         <video
           ref={videoElRef}
           src={videoSrc}
@@ -216,6 +256,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
           )}
         />
       ) : (
+        /* Desktop canvas frames */
         <canvas
           ref={canvasRef}
           aria-hidden
