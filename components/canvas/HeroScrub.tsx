@@ -17,7 +17,7 @@ interface HeroScrubProps {
 
 /**
  * Detects mobile/tablet/iOS at render time.
- * Safe to call during render: ssr:false means window is always defined here.
+ * Safe: ssr:false means window is always defined here.
  */
 function isMobile(): boolean {
   return (
@@ -30,99 +30,31 @@ function isMobile(): boolean {
 
 // ─── Mobile path ─────────────────────────────────────────────────────────────
 /**
- * Mobile scroll-scrub hero.
+ * Mobile hero: simple autoplay loop video background.
  *
- * Problem with autoPlay + canplay approach:
- *   iOS sometimes ignores a single pause() call, so the video keeps playing.
- *
- * New strategy:
- *  1. NO autoPlay on the HTML element — prevents uncontrolled playback.
- *  2. call play().then(pause) from JS — muted videos allow programmatic play()
- *     without user gesture on iOS. This unlocks the video for seeking.
- *  3. RAF loop enforces !paused → pause() every tick so iOS can't sneak a play.
- *  4. Video visible immediately — no opacity-0 fade, no loading wait.
+ * The hero section is 100vh on mobile (not 300vh), so there's no scroll
+ * distance to scrub. Just play the video as a cinematic ambient background.
+ * play().then(undefined) — autoPlay attr alone is more reliable here since
+ * we're not trying to control currentTime.
  */
-function MobileHero({ triggerRef }: HeroScrubProps) {
+function MobileHero() {
   const vidRef = useRef<HTMLVideoElement>(null);
-  const progress = useRef({ value: 0, smoothed: 0 });
 
-  // Bind scroll progress via ScrollTrigger.
-  useEffect(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-    const st = ScrollTrigger.create({
-      trigger,
-      start: "top top",
-      end: "bottom bottom",
-      onUpdate: (self) => {
-        progress.current.value = self.progress;
-      },
-    });
-    return () => st.kill();
-  }, [triggerRef]);
-
-  // Unlock video for seeking, then drive currentTime from scroll.
   useEffect(() => {
     const v = vidRef.current;
     if (!v) return;
-    let rafId = 0;
-    let cancelled = false;
-
-    const startScrub = () => {
-      if (cancelled) return;
-      const tick = () => {
-        // Enforce paused every frame — iOS sometimes resumes after a seek.
-        if (!v.paused) v.pause();
-
-        progress.current.smoothed +=
-          (progress.current.value - progress.current.smoothed) * 0.1;
-
-        if (v.duration && Number.isFinite(v.duration)) {
-          const target =
-            progress.current.smoothed * Math.max(v.duration - 0.05, 0);
-          if (Math.abs(v.currentTime - target) > 0.02) {
-            v.currentTime = target;
-          }
-        }
-        rafId = requestAnimationFrame(tick);
-      };
-      rafId = requestAnimationFrame(tick);
-    };
-
-    // play() on a muted video is allowed without user gesture on iOS.
-    // play().then(pause) is the canonical way to unlock seeking.
-    v.play()
-      .then(() => {
-        v.pause();
-        startScrub();
-      })
-      .catch(() => {
-        // If play() is blocked (unusual for muted), fallback to canplay event.
-        v.addEventListener(
-          "canplay",
-          () => {
-            v.pause();
-            startScrub();
-          },
-          { once: true }
-        );
-      });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-    };
+    // Ensure muted is set via JS too (some browsers require this for autoplay).
+    v.muted = true;
+    v.play().catch(() => {/* silently ignore if blocked */});
   }, []);
 
   return (
     <div className="absolute inset-0">
       <div className="hero-ambient absolute inset-0" />
-      {/*
-        No autoPlay — we call play() from JS above to control timing.
-        Visible immediately so there's no "loading" delay for the user.
-      */}
       <video
         ref={vidRef}
+        autoPlay
+        loop
         muted
         playsInline
         preload="auto"
@@ -139,6 +71,12 @@ function MobileHero({ triggerRef }: HeroScrubProps) {
 }
 
 // ─── Desktop path ─────────────────────────────────────────────────────────────
+/**
+ * Desktop scroll-scrubbed hero.
+ * Extracts 96 ImageBitmap frames from the video and paints them to a canvas
+ * driven by ScrollTrigger progress (0–300vh → frame 0–95).
+ * Falls back to autoplay loop if frame extraction fails (CORS / canvas taint).
+ */
 function DesktopHeroScrub({ triggerRef }: HeroScrubProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElRef = useRef<HTMLVideoElement>(null);
@@ -316,7 +254,7 @@ function DesktopHeroScrub({ triggerRef }: HeroScrubProps) {
 // ─── Public export ────────────────────────────────────────────────────────────
 export function HeroScrub({ triggerRef }: HeroScrubProps) {
   if (isMobile()) {
-    return <MobileHero triggerRef={triggerRef} />;
+    return <MobileHero />;
   }
   return <DesktopHeroScrub triggerRef={triggerRef} />;
 }

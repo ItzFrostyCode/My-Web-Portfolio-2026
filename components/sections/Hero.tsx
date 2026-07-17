@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -16,20 +16,35 @@ const HeroScrub = dynamic(
 );
 
 /**
- * Pinned, scroll-scrubbed hero:
- * 300vh scroll distance drives one full 360° orbit of the hero video.
- * Massive kinetic typography reveals letter-by-letter on load.
+ * Hero section.
+ *
+ * Desktop: 300vh pinned scroll-scrub — the video orbits as you scroll.
+ * Mobile:  100vh normal section — video autoplays as ambient background.
+ *          620vh of dead-zone scrolling (hero 300vh + pillars 320vh) is
+ *          terrible on mobile — touch swipes blow through it in seconds.
  */
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
+  const [mobile, setMobile] = useState(false);
 
+  // Detect mobile once on client (ssr-safe).
   useEffect(() => {
-    if (reduced) return;
+    const check = () =>
+      setMobile(
+        /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+          navigator.maxTouchPoints > 0 ||
+          window.matchMedia("(pointer: coarse)").matches
+      );
+    check();
+  }, []);
+
+  // Desktop only: title drifts up/fades during the 300vh scrub.
+  useEffect(() => {
+    if (reduced || mobile) return;
     const ctx = gsap.context(() => {
-      // Title drifts up and fades as the orbit plays out.
       gsap.to(titleRef.current, {
         yPercent: -28,
         opacity: 0.15,
@@ -43,14 +58,19 @@ export function Hero() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reduced]);
+  }, [reduced, mobile]);
 
   return (
-    <section ref={sectionRef} id="top" className="relative h-[300vh]">
-      <div ref={stickyRef} className="sticky top-0 h-screen overflow-hidden">
+    <section
+      ref={sectionRef}
+      id="top"
+      // Desktop: 300vh for scroll-scrub. Mobile: 100vh normal section.
+      className={mobile ? "relative h-screen" : "relative h-[300vh]"}
+    >
+      <div className="sticky top-0 h-screen overflow-hidden">
         <HeroScrub triggerRef={sectionRef} />
 
-        {/* Emerald edge vignette — dims the backlight across the whole frame, not just edges */}
+        {/* Emerald edge vignette */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,5,5,0.35)_0%,rgba(5,5,5,0.45)_45%,rgba(5,5,5,0.9)_100%)]" />
 
         <div
@@ -77,7 +97,7 @@ export function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 1 }}
           >
-            Aspiring Full-Stack Dev & UI UX Designer crafting modern, scalable, and
+            Aspiring Full-Stack Dev &amp; UI UX Designer crafting modern, scalable, and
             user-focused digital experiences.
           </motion.p>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { Pillar } from "@/types";
@@ -36,9 +36,22 @@ const pillars: Pillar[] = [
 export function Pillars() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduced = usePrefersReducedMotion();
+  const [mobile, setMobile] = useState(false);
 
   useEffect(() => {
-    if (reduced) return;
+    setMobile(
+      /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        navigator.maxTouchPoints > 0 ||
+        window.matchMedia("(pointer: coarse)").matches
+    );
+  }, []);
+
+  // Simple layout on mobile or reduced motion — no GSAP needed.
+  const simple = reduced || mobile;
+
+  useEffect(() => {
+    if (simple) return;
     const ctx = gsap.context(() => {
       const items = gsap.utils.toArray<HTMLElement>("[data-pillar]");
       items.forEach((item, i) => {
@@ -81,16 +94,16 @@ export function Pillars() {
     <section
       ref={sectionRef}
       id="pillars"
-      className={reduced ? "relative" : "relative h-[320vh]"}
+      className={simple ? "relative" : "relative h-[320vh]"}
     >
       <div
         className={
-          reduced
+          simple
             ? "mx-auto max-w-5xl space-y-24 px-6 py-32"
             : "sticky top-0 flex h-screen items-center overflow-hidden"
         }
       >
-        {reduced ? (
+        {simple ? (
           pillars.map((p) => <PillarBlock key={p.index} pillar={p} />)
         ) : (
           <div className="relative mx-auto w-full max-w-5xl px-6">
