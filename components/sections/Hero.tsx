@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "framer-motion";
 import { KineticText } from "@/components/ui/KineticText";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useIsPhoneClass } from "@/hooks/useIsPhoneClass";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -18,32 +19,29 @@ const HeroScrub = dynamic(
 /**
  * Hero section.
  *
- * Desktop: 300vh pinned scroll-scrub — the video orbits as you scroll.
- * Mobile:  100vh normal section — video autoplays as ambient background.
+ * Desktop + tablet (iPad and similar): 300vh pinned scroll-scrub — the
+ *          video orbits as you scroll. iPad reports as "MacIntel" with
+ *          multi-touch under iPadOS, so it's detected via touch points
+ *          rather than user-agent string alone (see useIsPhoneClass).
+ * Phone:   100vh normal section — video autoplays as ambient background.
  *          620vh of dead-zone scrolling (hero 300vh + pillars 320vh) is
- *          terrible on mobile — touch swipes blow through it in seconds.
+ *          terrible on small touch screens — swipes blow through it in
+ *          seconds, and there's no room to see the orbit progress anyway.
+ *
+ * Both this component and HeroScrub must agree on phone-vs-not, or the
+ * section height (300vh vs 100vh) and the video mode (scrub vs autoplay)
+ * fall out of sync — so the classification is computed once here and
+ * passed down, instead of each component detecting it independently.
  */
 export function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
-  const [mobile, setMobile] = useState(false);
+  const phone = useIsPhoneClass();
 
-  // Detect mobile once on client (ssr-safe).
+  // Desktop/tablet only: title drifts up/fades during the 300vh scrub.
   useEffect(() => {
-    const check = () =>
-      setMobile(
-        /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
-          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
-          navigator.maxTouchPoints > 0 ||
-          window.matchMedia("(pointer: coarse)").matches
-      );
-    check();
-  }, []);
-
-  // Desktop only: title drifts up/fades during the 300vh scrub.
-  useEffect(() => {
-    if (reduced || mobile) return;
+    if (reduced || phone) return;
     const ctx = gsap.context(() => {
       gsap.to(titleRef.current, {
         yPercent: -28,
@@ -58,17 +56,17 @@ export function Hero() {
       });
     }, sectionRef);
     return () => ctx.revert();
-  }, [reduced, mobile]);
+  }, [reduced, phone]);
 
   return (
     <section
       ref={sectionRef}
       id="top"
-      // Desktop: 300vh for scroll-scrub. Mobile: 100vh normal section.
-      className={mobile ? "relative h-screen" : "relative h-[300vh]"}
+      // Desktop/tablet: 300vh for scroll-scrub. Phone: 100vh normal section.
+      className={phone ? "relative h-screen" : "relative h-[300vh]"}
     >
       <div className="sticky top-0 h-screen overflow-hidden">
-        <HeroScrub triggerRef={sectionRef} />
+        <HeroScrub triggerRef={sectionRef} phone={phone} />
 
         {/* Emerald edge vignette */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,5,5,0.35)_0%,rgba(5,5,5,0.45)_45%,rgba(5,5,5,0.9)_100%)]" />

@@ -13,19 +13,13 @@ const PROBE_TIMEOUT_MS = 4000;
 
 interface HeroScrubProps {
   triggerRef: React.RefObject<HTMLElement | null>;
-}
-
-/**
- * Detects mobile/tablet/iOS at render time.
- * Safe: ssr:false means window is always defined here.
- */
-function isMobile(): boolean {
-  return (
-    /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) ||
-    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches
-  );
+  /**
+   * Phone-vs-not, computed once by the parent Hero component (useIsPhoneClass)
+   * and passed down — this component must never detect it independently, or
+   * it can disagree with Hero's own 300vh/100vh section sizing and fall out
+   * of sync after a resize/rotation.
+   */
+  phone: boolean;
 }
 
 // ─── Mobile path ─────────────────────────────────────────────────────────────
@@ -77,7 +71,7 @@ function MobileHero() {
  * driven by ScrollTrigger progress (0–300vh → frame 0–95).
  * Falls back to autoplay loop if frame extraction fails (CORS / canvas taint).
  */
-function DesktopHeroScrub({ triggerRef }: HeroScrubProps) {
+function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerRef"] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElRef = useRef<HTMLVideoElement>(null);
   const framesRef = useRef<ImageBitmap[]>([]);
@@ -252,8 +246,8 @@ function DesktopHeroScrub({ triggerRef }: HeroScrubProps) {
 }
 
 // ─── Public export ────────────────────────────────────────────────────────────
-export function HeroScrub({ triggerRef }: HeroScrubProps) {
-  if (isMobile()) {
+export function HeroScrub({ triggerRef, phone }: HeroScrubProps) {
+  if (phone) {
     return <MobileHero />;
   }
   return <DesktopHeroScrub triggerRef={triggerRef} />;
