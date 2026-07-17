@@ -10,68 +10,32 @@ gsap.registerPlugin(ScrollTrigger);
 
 const FRAME_COUNT = 96;
 const PROBE_TIMEOUT_MS = 4000;
+// Real mobile networks can make 96 sequential seeks slow — bail out to plain
+// autoplay instead of leaving the hero on the ambient-only "loading" state
+// forever if extraction hasn't finished by this point.
+const EXTRACT_TIMEOUT_MS = 12000;
 
 interface HeroScrubProps {
   triggerRef: React.RefObject<HTMLElement | null>;
-  /**
-   * Phone-vs-not, computed once by the parent Hero component (useIsPhoneClass)
-   * and passed down — this component must never detect it independently, or
-   * it can disagree with Hero's own 300vh/100vh section sizing and fall out
-   * of sync after a resize/rotation.
-   */
-  phone: boolean;
 }
 
-// ─── Mobile path ─────────────────────────────────────────────────────────────
 /**
- * Mobile hero: simple autoplay loop video background.
- *
- * The hero section is 100vh on mobile (not 300vh), so there's no scroll
- * distance to scrub. Just play the video as a cinematic ambient background.
- * play().then(undefined) — autoPlay attr alone is more reliable here since
- * we're not trying to control currentTime.
- */
-function MobileHero() {
-  const vidRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const v = vidRef.current;
-    if (!v) return;
-    // Ensure muted is set via JS too (some browsers require this for autoplay).
-    v.muted = true;
-    v.play().catch(() => {/* silently ignore if blocked */});
-  }, []);
-
-  return (
-    <div className="absolute inset-0">
-      <div className="hero-ambient absolute inset-0" />
-      <video
-        ref={vidRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden
-        className="absolute inset-0 h-full w-full object-cover"
-      >
-        <source src={media.heroOrbit.local} type="video/mp4" />
-        {media.heroOrbit.remote && (
-          <source src={media.heroOrbit.remote} type="video/mp4" />
-        )}
-      </video>
-    </div>
-  );
-}
-
-// ─── Desktop path ─────────────────────────────────────────────────────────────
-/**
- * Desktop scroll-scrubbed hero.
+ * Scroll-scrubbed hero — same on every device (phone, tablet, desktop).
  * Extracts 96 ImageBitmap frames from the video and paints them to a canvas
- * driven by ScrollTrigger progress (0–300vh → frame 0–95).
- * Falls back to autoplay loop if frame extraction fails (CORS / canvas taint).
+ * driven by ScrollTrigger progress (0–300vh → frame 0–95), so scrolling
+ * always drives the 360° orbit, regardless of screen size or input type.
+ *
+ * Degrades gracefully by *capability*, not by device-sniffing:
+ *   frames   — canvas scrub (the real experience)
+ *   autoplay — frame extraction failed/timed out (CORS taint, slow network,
+ *              codec issue) → falls back to a plain looping <video>. This
+ *              video must be fully visible from the very first frame — iOS
+ *              Safari silently refuses to autoplay a video that starts at
+ *              opacity: 0 or display: none. (Learned the hard way; do not
+ *              add a fade-in to this element.)
+ *   fallback — no source reachable at all → ambient CSS background only.
  */
-function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerRef"] }) {
+export function HeroScrub({ triggerRef }: HeroScrubProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoElRef = useRef<HTMLVideoElement>(null);
   const framesRef = useRef<ImageBitmap[]>([]);
@@ -121,14 +85,19 @@ function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerR
         try {
           const video = await probe(src);
           try {
-            const frames = await extract(video);
+            const frames = await Promise.race([
+              extract(video),
+              new Promise<null>((_, reject) =>
+                setTimeout(() => reject(new Error("extract timeout")), EXTRACT_TIMEOUT_MS)
+              ),
+            ]);
             if (frames && !cancelled) {
               framesRef.current = frames;
               setMode("frames");
               return;
             }
           } catch {
-            // Canvas taint / CORS — fall through to autoplay.
+            // Canvas taint / CORS / too slow on this network — fall through to autoplay.
           }
           if (!cancelled) {
             setVideoSrc(src);
@@ -207,10 +176,23 @@ function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerR
     return () => { cancelAnimationFrame(rafId); ro.disconnect(); };
   }, [mode]);
 
+  // Canvas-only: the "frames" path has no autoplay restriction to worry about,
+  // so it gets the nice opacity fade-in. The "autoplay" <video> path is
+  // rendered fully visible immediately instead — see the note above.
   useEffect(() => {
-    if (mode !== "frames" && mode !== "autoplay") return;
+    if (mode !== "frames") return;
     const id = requestAnimationFrame(() => setRevealed(true));
     return () => cancelAnimationFrame(id);
+  }, [mode]);
+
+  // Belt-and-suspenders: some browsers need `muted` set via JS (not just the
+  // attribute) plus an explicit play() call before they'll honor autoplay.
+  useEffect(() => {
+    if (mode !== "autoplay") return;
+    const v = videoElRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {/* silently ignore if blocked */});
   }, [mode]);
 
   return (
@@ -226,10 +208,9 @@ function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerR
           playsInline
           preload="auto"
           aria-hidden
-          className={cn(
-            "will-transform absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[1400ms] ease-out",
-            revealed && "opacity-100"
-          )}
+          // Fully visible from the first frame — iOS Safari silently refuses
+          // to autoplay a video that starts at opacity: 0.
+          className="absolute inset-0 h-full w-full object-cover"
         />
       ) : (
         <canvas
@@ -243,14 +224,6 @@ function DesktopHeroScrub({ triggerRef }: { triggerRef: HeroScrubProps["triggerR
       )}
     </div>
   );
-}
-
-// ─── Public export ────────────────────────────────────────────────────────────
-export function HeroScrub({ triggerRef, phone }: HeroScrubProps) {
-  if (phone) {
-    return <MobileHero />;
-  }
-  return <DesktopHeroScrub triggerRef={triggerRef} />;
 }
 
 function seek(video: HTMLVideoElement, time: number): Promise<void> {
