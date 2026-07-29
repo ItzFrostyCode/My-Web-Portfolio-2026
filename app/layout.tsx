@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { Header } from "@/components/ui/Header";
 import "./globals.css";
@@ -63,6 +64,7 @@ export default function RootLayout({
       <body className="grain bg-ink text-cream">
         <Header />
         <SmoothScroll>{children}</SmoothScroll>
+        <Analytics />
       </body>
     </html>
   );
