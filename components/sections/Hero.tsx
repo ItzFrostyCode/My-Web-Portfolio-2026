@@ -29,16 +29,15 @@ export function Hero() {
   useEffect(() => {
     if (reduced) return;
     const ctx = gsap.context(() => {
-      // Title drifts up and fades as the orbit plays out.
+      // Fade title out ONLY at the very end of the 300vh hero section exit
       gsap.to(titleRef.current, {
-        yPercent: -28,
-        opacity: 0.15,
-        ease: "none",
+        opacity: 0,
+        ease: "power1.inOut",
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: "top top",
+          start: "75% top",
           end: "bottom bottom",
-          scrub: 0.6,
+          scrub: true,
         },
       });
     }, sectionRef);
@@ -47,32 +46,32 @@ export function Hero() {
 
   return (
     <section ref={sectionRef} id="top" className="relative h-[300vh]">
-      <div ref={stickyRef} className="sticky top-0 h-screen overflow-hidden">
+      <div ref={stickyRef} className="sticky top-0 h-[100dvh] overflow-hidden">
         <HeroScrub triggerRef={sectionRef} />
 
-        {/* Emerald edge vignette — dims the backlight across the whole frame, not just edges */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(5,5,5,0.35)_0%,rgba(5,5,5,0.45)_45%,rgba(5,5,5,0.9)_100%)]" />
+        {/* Ambient background contrast shadow */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/60" />
 
         <div
           ref={titleRef}
-          className="will-transform relative z-10 flex h-full flex-col items-center justify-center px-6 pt-[32vh] text-center"
+          className="will-transform relative z-10 flex h-full flex-col items-center justify-center px-6 pt-[28vh] text-center sm:pt-[32vh]"
         >
           <motion.p
-            className="eyebrow mb-6"
+            className="eyebrow mb-4 text-emerald-400 font-semibold tracking-[0.25em] drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] sm:mb-6"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.8 }}
           >
-            Portfolio — 2026
+            PORTFOLIO — 2026
           </motion.p>
 
           <KineticText
             text="JOSHUA WAYMAN A. ARABEJO"
-            className="display justify-center text-[11vw] leading-[0.86] text-cream sm:text-[8vw] lg:text-[6.5vw]"
+            className="display justify-center text-[10.5vw] font-extrabold leading-[0.86] text-[#FFFDF7] drop-shadow-[0_4px_30px_rgba(0,0,0,0.95)] sm:text-[8vw] lg:text-[6.5vw]"
           />
 
           <motion.p
-            className="mt-8 max-w-xl text-balance text-sm text-cream [text-shadow:0_2px_10px_rgba(0,0,0,0.85)] sm:text-base"
+            className="mt-6 max-w-xl text-balance text-sm font-semibold text-[#F0F2F5] drop-shadow-[0_2px_16px_rgba(0,0,0,0.95)] sm:mt-8 sm:text-base"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 1 }}
@@ -82,13 +81,13 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            className="absolute bottom-10 flex flex-col items-center gap-3"
+            className="absolute bottom-8 flex flex-col items-center gap-3 sm:bottom-10"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2, duration: 1 }}
             aria-hidden
           >
-            <span className="eyebrow text-[0.55rem]">Scroll</span>
+            <span className="eyebrow text-[0.55rem] text-emerald-400 font-semibold tracking-widest drop-shadow">Scroll</span>
             <span className="block h-12 w-px overflow-hidden bg-line">
               <motion.span
                 className="block h-4 w-px bg-emerald-glow"

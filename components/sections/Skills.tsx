@@ -51,20 +51,9 @@ export function Skills() {
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: "-10%" }}
               transition={{ duration: 0.6, delay: i * 0.05 }}
-              animate={{ y: [0, -6, 0] }}
-              // Gentle idle float, staggered per chip
-               
               className="will-transform"
-              style={{ animationDelay: `${i * 0.2}s` }}
             >
               <motion.span
-                animate={{ y: [0, -7, 0] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 4 + (i % 4),
-                  delay: i * 0.25,
-                  ease: "easeInOut",
-                }}
                 whileHover={{ scale: 1.08, borderColor: "#34d399", color: "#34d399" }}
                 className="block cursor-default rounded-full border border-line px-6 py-3 font-mono text-sm uppercase tracking-widest text-cream-dim transition-colors"
               >
