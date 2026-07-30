@@ -20,7 +20,7 @@ export function CinematicImage({ src, label, className }: CinematicImageProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: "some" }}
+      viewport={{ once: true, amount: 0.1 }}
       transition={{ duration: 0.8, ease: "easeOut" }}
       className={cn(
         "will-transform relative aspect-video w-full overflow-hidden rounded-xl border border-line bg-ink-soft",
