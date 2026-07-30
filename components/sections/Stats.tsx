@@ -38,10 +38,10 @@ export function Stats() {
                 <Counter
                   value={s.value}
                   suffix={s.suffix}
-                  className="text-4xl text-cream sm:text-5xl lg:text-6xl"
+                  className="text-3xl text-cream sm:text-5xl lg:text-6xl"
                 />
               ) : (
-                <span className="block max-w-full text-2xl tracking-tight text-emerald-glow sm:text-4xl md:text-5xl lg:text-6xl">
+                <span className="block max-w-full truncate text-lg font-bold tracking-tight text-emerald-glow xs:text-xl sm:text-3xl md:text-5xl lg:text-6xl">
                   {s.literal}
                 </span>
               )}

@@ -60,6 +60,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${anton.variable} ${grotesk.variable} ${jetbrains.variable}`}>
+      <head>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+      </head>
       <body className="grain bg-ink text-cream">
         <Header />
         <SmoothScroll>{children}</SmoothScroll>
