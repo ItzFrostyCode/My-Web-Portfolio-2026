@@ -18,7 +18,7 @@ interface CinematicVideoProps {
 export function CinematicVideo({ source, label, className }: CinematicVideoProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(wrapRef, { amount: 0, margin: "100px 0px 100px 0px" });
+  const inView = useInView(wrapRef, { amount: "some" });
   const sources = [source.local, source.remote].filter(Boolean);
   const [srcIndex, setSrcIndex] = useState(0);
   const videoMissing = srcIndex >= sources.length;
@@ -39,7 +39,7 @@ export function CinematicVideo({ source, label, className }: CinematicVideoProps
       ref={wrapRef}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0, margin: "100px 0px 100px 0px" }}
+      viewport={{ once: true, amount: "some" }}
       transition={{ duration: 0.8, ease: "easeOut" }}
       className={cn(
         "will-transform relative aspect-video w-full overflow-hidden rounded-xl border border-line bg-ink-soft",
