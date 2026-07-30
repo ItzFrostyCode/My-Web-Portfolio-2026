@@ -72,7 +72,7 @@ export function CinematicVideo({ source, label, className }: CinematicVideoProps
             initial={{ scale: 1.06 }}
             whileInView={{ scale: 1.18 }}
             viewport={{ once: false, margin: "-10%" }}
-            transition={{ duration: 16, ease: "linear" }}
+            transition={{ duration: 8, ease: "linear" }}
             className="will-transform h-full w-full object-cover object-[center_22%] [filter:grayscale(1)_sepia(0.45)_hue-rotate(105deg)_saturate(1.3)_brightness(0.72)_contrast(1.18)]"
           />
           {/* Emerald glow wash */}
