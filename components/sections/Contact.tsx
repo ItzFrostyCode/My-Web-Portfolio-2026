@@ -58,7 +58,7 @@ export function Contact() {
             {/* Left: Message */}
             <div className="flex flex-col justify-center">
               <p className="eyebrow mb-6">CONTACT</p>
-              <h3 className="display text-4xl leading-[1.05]! text-cream sm:text-6xl lg:text-7xl">
+              <h3 className="display leading-[1.05]! text-5xl text-cream sm:text-6xl lg:text-7xl">
                 Have a project or idea? Let&apos;s discuss it.
               </h3>
               <p className="mt-8 max-w-md text-base text-cream-dim sm:text-lg">
@@ -67,7 +67,7 @@ export function Contact() {
             </div>
 
             {/* Right: Contact Info Table */}
-            <div className="space-y-4 border-t border-line pt-8 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+            <div className="space-y-4 border-l border-line pl-8">
               {contactInfo.map((item, index) => (
                 <motion.a
                   key={item.label}

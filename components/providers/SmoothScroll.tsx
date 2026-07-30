@@ -7,43 +7,36 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
+/** Live reference to the active Lenis instance, so any component can drive scroll (e.g. a "back to top" button) through the same smoothing instead of fighting it with raw window.scrollTo. Null when reduced motion is on and Lenis was never created. */
 export let lenisInstance: Lenis | null = null;
 
 /**
  * Single source of truth for scrolling:
- * Lenis handles smooth wheel scrolling on desktop while preserving
- * native 60/120Hz touch scrolling on mobile without touch-fighting glitches.
+ * Lenis drives the scroll, GSAP's ticker drives Lenis,
+ * and ScrollTrigger listens to Lenis for perfect sync.
  */
 export function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) return;
 
-    const isTouch = typeof window !== "undefined" && "ontouchstart" in window;
-
     const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      // On mobile touch devices, let native smooth touch momentum scroll run cleanly
-      ...(isTouch ? { touchMultiplier: 0 } : {}),
+      lerp: 0.1,
+      wheelMultiplier: 1,
+      touchMultiplier: 1.4,
     });
     lenisInstance = lenis;
 
     lenis.on("scroll", ScrollTrigger.update);
 
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
-
-    // Standard GSAP lag smoothing to gracefully handle frame dips without snapping
-    gsap.ticker.lagSmoothing(500, 33);
+    const raf = (time: number) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(raf);
+    gsap.ticker.lagSmoothing(0);
 
     return () => {
-      cancelAnimationFrame(rafId);
+      gsap.ticker.remove(raf);
       lenis.destroy();
       lenisInstance = null;
     };
@@ -51,4 +44,3 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
-

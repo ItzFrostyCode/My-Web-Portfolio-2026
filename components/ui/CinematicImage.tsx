@@ -11,17 +11,19 @@ interface CinematicImageProps {
 }
 
 /**
- * Full-bleed cinematic photo reveal for cards backed by a static shot.
+ * Full-bleed cinematic photo reveal — same clip-path treatment as
+ * CinematicVideo, for cards backed by a static shot instead of a loop.
+ * Falls back to an emerald-lit placeholder if the image is missing.
  */
 export function CinematicImage({ src, label, className }: CinematicImageProps) {
   const [missing, setMissing] = useState(false);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      initial={{ clipPath: "inset(12% 6% 12% 6% round 12px)", opacity: 0.4 }}
+      whileInView={{ clipPath: "inset(0% 0% 0% 0% round 12px)", opacity: 1 }}
+      viewport={{ once: true, margin: "-20%" }}
+      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "will-transform relative aspect-video w-full overflow-hidden rounded-xl border border-line bg-ink-soft",
         className
@@ -43,4 +45,3 @@ export function CinematicImage({ src, label, className }: CinematicImageProps) {
     </motion.div>
   );
 }
-

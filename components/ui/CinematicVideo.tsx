@@ -13,16 +13,18 @@ interface CinematicVideoProps {
 
 /**
  * Full-bleed cinematic media card.
- * Priority: local video → hosted video → poster still → fallback image
+ * Priority: local video → hosted video → poster still (slow Ken Burns
+ * drift) → nothing (the card collapses so the layout never shows an
+ * empty placeholder).
  */
 export function CinematicVideo({ source, label, className }: CinematicVideoProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const inView = useInView(wrapRef, { amount: 0.1 });
+  const inView = useInView(wrapRef, { margin: "-15%" });
   const sources = [source.local, source.remote].filter(Boolean);
   const [srcIndex, setSrcIndex] = useState(0);
   const videoMissing = srcIndex >= sources.length;
-  const posterSrc = source.poster || "/media/closer-still.jpg";
+  const hasPoster = Boolean(source.poster);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -34,13 +36,16 @@ export function CinematicVideo({ source, label, className }: CinematicVideoProps
     }
   }, [inView, videoMissing, srcIndex]);
 
+  // Nothing to show at all — collapse the card entirely.
+  if (videoMissing && !hasPoster) return null;
+
   return (
     <motion.div
       ref={wrapRef}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      initial={{ clipPath: "inset(12% 6% 12% 6% round 12px)", opacity: 0.4 }}
+      whileInView={{ clipPath: "inset(0% 0% 0% 0% round 12px)", opacity: 1 }}
+      viewport={{ once: true, margin: "-20%" }}
+      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "will-transform relative aspect-video w-full overflow-hidden rounded-xl border border-line bg-ink-soft",
         className
@@ -62,12 +67,12 @@ export function CinematicVideo({ source, label, className }: CinematicVideoProps
         <>
           {/* Cinematic emerald duotone grade over the real photo */}
           <motion.img
-            src={posterSrc}
+            src={source.poster}
             alt={label}
-            initial={{ scale: 1.04 }}
-            whileInView={{ scale: 1.1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 12, ease: "linear" }}
+            initial={{ scale: 1.06 }}
+            whileInView={{ scale: 1.18 }}
+            viewport={{ once: false, margin: "-10%" }}
+            transition={{ duration: 16, ease: "linear" }}
             className="will-transform h-full w-full object-cover object-[center_22%] [filter:grayscale(1)_sepia(0.45)_hue-rotate(105deg)_saturate(1.3)_brightness(0.72)_contrast(1.18)]"
           />
           {/* Emerald glow wash */}
@@ -80,4 +85,3 @@ export function CinematicVideo({ source, label, className }: CinematicVideoProps
     </motion.div>
   );
 }
-

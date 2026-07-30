@@ -87,7 +87,7 @@ export function Pillars() {
         className={
           reduced
             ? "mx-auto max-w-5xl space-y-24 px-6 py-32"
-            : "sticky top-0 flex h-[100dvh] items-center overflow-hidden"
+            : "sticky top-0 flex h-screen items-center overflow-hidden"
         }
       >
         {reduced ? (
