@@ -21,13 +21,19 @@ export function Stats() {
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
-            className="flex flex-col items-center gap-2 px-4 py-14 text-center sm:py-20"
+            className="flex flex-col items-center gap-2 px-2 py-10 text-center sm:px-4 sm:py-20"
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-10%" }}
             transition={{ duration: 0.7, delay: i * 0.08 }}
           >
-            <span className="display text-5xl text-cream sm:text-6xl">
+            <span
+              className={
+                s.kind === "literal"
+                  ? "display break-words text-3xl leading-tight text-cream xs:text-4xl sm:text-5xl lg:text-6xl"
+                  : "display text-5xl text-cream sm:text-6xl"
+              }
+            >
               {s.kind === "counter" ? (
                 <Counter value={s.value} suffix={s.suffix} />
               ) : (

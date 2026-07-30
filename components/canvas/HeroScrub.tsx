@@ -35,19 +35,34 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
   const [revealed, setRevealed] = useState(false);
 
   // 1) Resolve a playable source, then try frame extraction.
+  // On mobile / iOS we skip straight to video-seek mode because:
+  //  • iOS ignores preload="auto" (needs user gesture)
+  //  • crossOrigin on same-origin video taints the canvas
+  //  • createImageBitmap is unreliable on older WebKit
   useEffect(() => {
     let cancelled = false;
     const sources = [media.heroOrbit.local, media.heroOrbit.remote].filter(Boolean);
 
-    const probe = (src: string) =>
+    /** Returns true if we should skip the canvas/frame path and go straight to video. */
+    const isMobileOrIOS = () => {
+      if (typeof navigator === "undefined") return false;
+      return (
+        /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) // iPadOS
+      );
+    };
+
+    const probe = (src: string, withCors: boolean) =>
       new Promise<HTMLVideoElement>((resolve, reject) => {
         const v = document.createElement("video");
-        v.crossOrigin = "anonymous";
+        if (withCors) v.crossOrigin = "anonymous";
         v.muted = true;
         v.playsInline = true;
-        v.preload = "auto";
-        v.onloadedmetadata = () => resolve(v);
-        v.onerror = () => reject(new Error("unreachable"));
+        v.preload = "metadata"; // "metadata" is respected by iOS; "auto" is not
+        // Safety: iOS sometimes never fires loadedmetadata — give it 6 s max.
+        const timer = setTimeout(() => reject(new Error("timeout")), 6000);
+        v.onloadedmetadata = () => { clearTimeout(timer); resolve(v); };
+        v.onerror = () => { clearTimeout(timer); reject(new Error("unreachable")); };
         v.src = src;
       });
 
@@ -71,9 +86,27 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     };
 
     (async () => {
+      const mobile = isMobileOrIOS();
+
       for (const src of sources) {
+        // On mobile: skip canvas/frame extraction entirely — go straight to video seek.
+        if (mobile) {
+          try {
+            await probe(src, false); // no crossOrigin needed for video element
+            if (!cancelled) {
+              setVideoSrc(src);
+              setMode("video");
+              return;
+            }
+          } catch {
+            // try next source
+          }
+          continue;
+        }
+
+        // Desktop: try full frame extraction first.
         try {
-          const video = await probe(src);
+          const video = await probe(src, true);
           try {
             const frames = await extract(video);
             if (frames && !cancelled) {
@@ -82,7 +115,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
               return;
             }
           } catch {
-            // CORS-tainted or bitmap failure → seek-scrub the video element.
+            // CORS-tainted or bitmap failure → fall back to seek-scrub
             if (!cancelled) {
               setVideoSrc(src);
               setMode("video");
@@ -184,17 +217,32 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
     const v = videoElRef.current;
     if (!v) return;
     let rafId = 0;
-    const tick = () => {
-      progress.current.smoothed +=
-        (progress.current.value - progress.current.smoothed) * 0.14;
-      if (v.duration && Number.isFinite(v.duration)) {
-        const t = progress.current.smoothed * Math.max(v.duration - 0.05, 0);
-        if (Math.abs(v.currentTime - t) > 0.033) v.currentTime = t;
-      }
+
+    const startLoop = () => {
+      const tick = () => {
+        progress.current.smoothed +=
+          (progress.current.value - progress.current.smoothed) * 0.14;
+        if (v.duration && Number.isFinite(v.duration)) {
+          const t = progress.current.smoothed * Math.max(v.duration - 0.05, 0);
+          if (Math.abs(v.currentTime - t) > 0.033) v.currentTime = t;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
       rafId = requestAnimationFrame(tick);
     };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+
+    // On iOS the video element may not have metadata yet when this effect runs.
+    // Wait for it if needed, otherwise start immediately.
+    if (v.readyState >= 1 && Number.isFinite(v.duration)) {
+      startLoop();
+    } else {
+      v.addEventListener("loadedmetadata", startLoop, { once: true });
+    }
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      v.removeEventListener("loadedmetadata", startLoop);
+    };
   }, [mode]);
 
   return (
@@ -208,8 +256,11 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
           src={videoSrc}
           muted
           playsInline
-          preload="auto"
+          // webkit-playsinline is needed for older iOS (pre-10) in-browser playback
+          {...({ "webkit-playsinline": "true" } as Record<string, string>)}
+          preload="metadata"
           aria-hidden
+          tabIndex={-1}
           className={cn(
             "will-transform absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[1400ms] ease-out",
             revealed && "opacity-100"
@@ -219,6 +270,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
         <canvas
           ref={canvasRef}
           aria-hidden
+          tabIndex={-1}
           className={cn(
             "will-transform absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1400ms] ease-out",
             revealed && "opacity-100"
