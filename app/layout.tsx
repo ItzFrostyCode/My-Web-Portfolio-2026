@@ -55,6 +55,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -63,6 +65,7 @@ export default function RootLayout({
       <body className="grain bg-ink text-cream">
         <Header />
         <SmoothScroll>{children}</SmoothScroll>
+        <ScrollToTop />
       </body>
     </html>
   );

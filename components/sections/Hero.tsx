@@ -72,14 +72,30 @@ export function Hero() {
           />
 
           <motion.p
-            className="mt-8 max-w-xl text-balance text-sm text-cream [text-shadow:0_2px_10px_rgba(0,0,0,0.85)] sm:text-base"
+            className="mt-6 max-w-xl text-balance text-sm text-cream [text-shadow:0_2px_10px_rgba(0,0,0,0.85)] sm:text-base font-light"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4, duration: 1 }}
           >
-            Aspiring Full-Stack Developer crafting modern, scalable, and
-            user-focused digital experiences.
+            BSIT Student &amp; UI/UX Web Developer passionate about bringing modern web applications, interactive interfaces, and custom digital tools to life.
           </motion.p>
+
+          <motion.div
+            className="mt-6 flex flex-wrap justify-center gap-2 font-mono text-[0.7rem] uppercase tracking-wider text-emerald-glow"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.6, duration: 1 }}
+          >
+            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
+              ✨ UI/UX &amp; Prototyping
+            </span>
+            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
+              🚀 Web Application Development
+            </span>
+            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
+              💡 Custom Systems &amp; Portals
+            </span>
+          </motion.div>
 
           <motion.div
             className="absolute bottom-10 flex flex-col items-center gap-3"

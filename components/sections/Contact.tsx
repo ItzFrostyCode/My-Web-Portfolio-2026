@@ -57,13 +57,21 @@ export function Contact() {
           >
             {/* Left: Message */}
             <div className="flex flex-col justify-center">
-              <p className="eyebrow mb-6">CONTACT</p>
-              <h3 className="display leading-[1.05]! text-5xl text-cream sm:text-6xl lg:text-7xl">
-                Have a project or idea? Let&apos;s discuss it.
+              <p className="eyebrow mb-4">LET'S CONNECT</p>
+              <h3 className="display leading-[1.05]! text-4xl text-cream sm:text-6xl lg:text-7xl">
+                Got a project in mind or an opportunity to share? Let&apos;s talk!
               </h3>
-              <p className="mt-8 max-w-md text-base text-cream-dim sm:text-lg">
-                I take on projects that challenge my skills and align with my values. Reach out with details, and let&apos;s build something remarkable together.
+              <p className="mt-6 max-w-md text-base text-cream-dim sm:text-lg leading-relaxed">
+                Whether you need a full-stack web application, custom desktop management software, or just want to discuss code and ideas, I&apos;m always happy to connect and collaborate!
               </p>
+
+              <div className="mt-8 flex items-center gap-2 font-mono text-xs text-emerald-glow">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-glow opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-glow" />
+                </span>
+                <span>Fast Email Response (Usually within 24 hours)</span>
+              </div>
             </div>
 
             {/* Right: Contact Info Table */}

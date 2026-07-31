@@ -5,18 +5,41 @@ export type ProjectCategory =
   | "School Project"
   | "Ongoing Thesis";
 
+export interface ProjectMetric {
+  value: string;
+  label: string;
+  subtext?: string;
+}
+
 export interface Project {
   id: string;
   index: string;
   title: string;
+  subtitle?: string;
   /** Omit to show no category badge on this card. */
   category?: ProjectCategory;
   description: string;
   stack: string[];
   image: string;
+  demoImage?: string;
+  screenshots?: string[];
   /** Omit either link when it doesn't apply to this project. */
   github?: string;
   website?: string;
+  funFact?: string;
+  problem?: string;
+  solution?: string;
+  role?: string;
+  status?: string;
+  contributions?: string[];
+  features?: string[];
+  metrics?: ProjectMetric[];
+  credentials?: {
+    isPrivate?: boolean;
+    note?: string;
+    email?: string;
+    password?: string;
+  };
 }
 
 export interface SocialLink {
