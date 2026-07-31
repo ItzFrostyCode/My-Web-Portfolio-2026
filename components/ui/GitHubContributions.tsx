@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import { ExternalLink } from "lucide-react";
 import { socials } from "@/content/socials";
 
-type Year = "2026" | "2025" | "2024";
+type Year = "2026" | "2025";
 
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function GitHubContributions() {
   const [selectedYear, setSelectedYear] = useState<Year>("2026");
-  const [totalCount, setTotalCount] = useState<number>(332);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [weeksData, setWeeksData] = useState<number[][]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const githubLink = socials.find((s) => s.id === "github")?.href || "https://github.com/ItzFrostyCode";
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function GitHubContributions() {
         <div className="flex items-center gap-4">
           {/* Year Switcher Pills */}
           <div className="flex items-center rounded-full border border-line bg-ink p-1 font-mono text-xs">
-            {(["2026", "2025", "2024"] as Year[]).map((y) => (
+            {(["2026", "2025"] as Year[]).map((y) => (
               <button
                 key={y}
                 onClick={() => setSelectedYear(y)}

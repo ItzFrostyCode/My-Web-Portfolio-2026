@@ -20,32 +20,36 @@ export async function GET(req: NextRequest) {
 
     const html = await res.text();
 
-    // Extract exact total contributions e.g. "332 contributions" or "49 contributions" or "1 contribution"
-    const countMatch = html.match(/([\d,]+)\s+contributions?/i);
+    // Extract exact total contributions e.g. "329 contributions in 2026"
+    const countMatch = html.match(/([\d,]+)\s*[\r\n]*\s*contributions/i);
     const totalContributions = countMatch ? parseInt(countMatch[1].replace(/,/g, ""), 10) : 0;
 
-    // Parse the 7 day rows (Sundays to Saturdays) from GitHub's <tbody>
-    const trRegex = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
-    const trMatches: string[] = [];
+    // Extract all contribution day cells from GitHub HTML
+    const days: { date: string; level: number }[] = [];
+    const tdRegex = /<td[^>]*id="contribution-day-component-[^"]*"[^>]*>/gi;
     let match;
 
-    while ((match = trRegex.exec(html)) !== null) {
-      trMatches.push(match[1]);
+    while ((match = tdRegex.exec(html)) !== null) {
+      const tdStr = match[0];
+      const dateMatch = tdStr.match(/data-date="([^"]+)"/);
+      const levelMatch = tdStr.match(/data-level="(\d)"/);
+      if (dateMatch && levelMatch) {
+        days.push({ date: dateMatch[1], level: parseInt(levelMatch[1], 10) });
+      }
     }
 
-    const dayRows = trMatches.filter((tr) => tr.includes("ContributionCalendar-day"));
+    // Sort days chronologically by date
+    days.sort((a, b) => a.date.localeCompare(b.date));
 
-    // Prepare 52 weeks x 7 days matrix
-    const weeks: number[][] = Array.from({ length: 52 }, () => Array(7).fill(0));
+    // Map into weeks x 7 days grid
+    const totalWeeks = Math.max(52, Math.ceil(days.length / 7));
+    const weeks: number[][] = Array.from({ length: totalWeeks }, () => Array(7).fill(0));
 
-    dayRows.slice(0, 7).forEach((rowHtml, dayIdx) => {
-      const tdRegex = /data-level="(\d)"/gi;
-      let tdMatch;
-      let weekIdx = 0;
-
-      while ((tdMatch = tdRegex.exec(rowHtml)) !== null && weekIdx < 52) {
-        weeks[weekIdx][dayIdx] = parseInt(tdMatch[1], 10);
-        weekIdx++;
+    days.forEach((day, idx) => {
+      const weekIdx = Math.floor(idx / 7);
+      const dayIdx = idx % 7;
+      if (weekIdx < totalWeeks) {
+        weeks[weekIdx][dayIdx] = day.level;
       }
     });
 
