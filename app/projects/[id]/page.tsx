@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, ArrowUp, ExternalLink, SquareCode } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, SquareCode } from "lucide-react";
 import { projects } from "@/content/projects";
 import type { Project } from "@/types";
 
@@ -338,7 +338,7 @@ export default async function ProjectCaseStudyPage({ params }: PageProps) {
       )}
 
       {/* Previous / Next Project Navigation Full-Bleed Footer Bar */}
-      <section className="w-full relative mt-20 border-t border-line bg-ink-soft/40 py-16 px-6 sm:px-12 lg:px-16 overflow-hidden">
+      <section className="w-full relative mt-20 border-t border-line bg-ink-soft/40 pt-16 pb-28 sm:pb-16 px-6 sm:px-12 lg:px-16 overflow-hidden">
         <div className="mx-auto max-w-7xl relative">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
             {/* Previous Project */}
@@ -366,17 +366,6 @@ export default async function ProjectCaseStudyPage({ params }: PageProps) {
                 {nextProject.title}
               </h4>
             </Link>
-          </div>
-
-          {/* Bottom Right TOP Scroll Button */}
-          <div className="flex justify-end pt-12 sm:pt-8">
-            <a
-              href="#top"
-              className="flex items-center gap-1.5 rounded-none border border-line bg-ink px-4 py-2 font-mono text-[0.65rem] uppercase tracking-widest text-cream hover:border-emerald-glow hover:text-emerald-glow transition-colors shadow-lg"
-            >
-              <ArrowUp className="h-3.5 w-3.5" />
-              <span>TOP</span>
-            </a>
           </div>
         </div>
       </section>

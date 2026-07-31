@@ -26,24 +26,7 @@ export function Hero() {
   const titleRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
 
-  useEffect(() => {
-    if (reduced) return;
-    const ctx = gsap.context(() => {
-      // Title drifts up and fades as the orbit plays out.
-      gsap.to(titleRef.current, {
-        yPercent: -28,
-        opacity: 0.15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 0.6,
-        },
-      });
-    }, sectionRef);
-    return () => ctx.revert();
-  }, [reduced]);
+  // Title remains steady on scroll (no drift or transparency fade)
 
   return (
     <section ref={sectionRef} id="top" className="relative h-[300vh]">
@@ -55,10 +38,10 @@ export function Hero() {
 
         <div
           ref={titleRef}
-          className="will-transform relative z-10 flex h-full flex-col items-center justify-center px-6 pt-[32vh] text-center"
+          className="will-transform relative z-10 flex h-full flex-col items-center justify-end sm:justify-center px-4 sm:px-6 pt-16 sm:pt-0 pb-16 sm:pb-8 text-center mt-[50px] sm:mt-[200px]"
         >
           <motion.p
-            className="eyebrow mb-6"
+            className="eyebrow mb-3 sm:mb-6"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.8 }}
@@ -68,7 +51,7 @@ export function Hero() {
 
           <KineticText
             text="JOSHUA WAYMAN A. ARABEJO"
-            className="display justify-center text-[11vw] leading-[0.86] text-cream sm:text-[8vw] lg:text-[6.5vw]"
+            className="display justify-center text-[9.5vw] leading-[0.88] text-cream sm:text-[8vw] lg:text-[6.5vw]"
           />
 
           <motion.p
@@ -81,34 +64,34 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            className="mt-6 flex flex-wrap justify-center gap-2 font-mono text-[0.7rem] uppercase tracking-wider text-emerald-glow"
+            className="mt-6 flex flex-wrap justify-center gap-2 font-mono text-[0.7rem] uppercase tracking-wider"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.6, duration: 1 }}
           >
-            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
-              ✨ UI/UX &amp; Prototyping
+            <span className="rounded-full border border-line bg-ink-soft/90 backdrop-blur-md px-3.5 py-1.5 text-cream-dim transition-colors hover:border-emerald-glow/40 hover:text-cream">
+              UI/UX &amp; Prototyping
             </span>
-            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
-              🚀 Web Application Development
+            <span className="rounded-full border border-line bg-ink-soft/90 backdrop-blur-md px-3.5 py-1.5 text-cream-dim transition-colors hover:border-emerald-glow/40 hover:text-cream">
+              Web Application Development
             </span>
-            <span className="rounded-full border border-emerald-glow/30 bg-emerald-deep/30 px-3 py-1">
-              💡 Custom Systems &amp; Portals
+            <span className="rounded-full border border-line bg-ink-soft/90 backdrop-blur-md px-3.5 py-1.5 text-cream-dim transition-colors hover:border-emerald-glow/40 hover:text-cream">
+              Custom Systems &amp; Portals
             </span>
           </motion.div>
 
           <motion.div
-            className="absolute bottom-10 flex flex-col items-center gap-3"
+            className="mt-6 sm:mt-10 flex flex-col items-center gap-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2, duration: 1 }}
             aria-hidden
           >
             <span className="eyebrow text-[0.55rem]">Scroll</span>
-            <span className="block h-12 w-px overflow-hidden bg-line">
+            <span className="block h-10 w-px overflow-hidden bg-line">
               <motion.span
                 className="block h-4 w-px bg-emerald-glow"
-                animate={{ y: [0, 48] }}
+                animate={{ y: [0, 40] }}
                 transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
               />
             </span>

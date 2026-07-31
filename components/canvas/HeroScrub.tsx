@@ -262,7 +262,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
           aria-hidden
           tabIndex={-1}
           className={cn(
-            "will-transform absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-[1400ms] ease-out",
+            "will-transform absolute inset-0 h-full w-full object-cover object-[center_20%] sm:object-center opacity-0 transition-opacity duration-[1400ms] ease-out",
             revealed && "opacity-100"
           )}
         />
@@ -272,7 +272,7 @@ export function HeroScrub({ triggerRef }: HeroScrubProps) {
           aria-hidden
           tabIndex={-1}
           className={cn(
-            "will-transform absolute inset-0 h-full w-full opacity-0 transition-opacity duration-[1400ms] ease-out",
+            "will-transform absolute inset-0 h-full w-full object-cover object-[center_20%] sm:object-center opacity-0 transition-opacity duration-[1400ms] ease-out",
             revealed && "opacity-100"
           )}
         />

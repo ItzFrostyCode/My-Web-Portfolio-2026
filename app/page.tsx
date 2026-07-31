@@ -15,9 +15,6 @@ const ProjectWheel = dynamic(() =>
 const PersonaSwitcher = dynamic(() =>
   import("@/components/sections/PersonaSwitcher").then((m) => m.PersonaSwitcher)
 );
-const Journal = dynamic(() =>
-  import("@/components/sections/Journal").then((m) => m.Journal)
-);
 const CodeSandbox = dynamic(() =>
   import("@/components/sections/CodeSandbox").then((m) => m.CodeSandbox)
 );
@@ -39,7 +36,6 @@ export default function Home() {
       <Projects />
       <ProjectWheel />
       <PersonaSwitcher />
-      <Journal />
       <CodeSandbox />
       <Testimonials />
       <About />

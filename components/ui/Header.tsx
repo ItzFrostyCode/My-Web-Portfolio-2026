@@ -105,7 +105,7 @@ export function Header() {
       {/* Floating Mobile Page Dock Navigation */}
       <nav
         aria-label="Primary Mobile Navigation"
-        className="md:hidden fixed bottom-4 inset-x-4 z-50 flex items-center justify-around rounded-full border border-emerald-glow/40 bg-ink-soft/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl"
+        className="md:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] inset-x-4 max-w-sm mx-auto z-40 flex items-center justify-around rounded-full border border-line bg-ink-soft/95 backdrop-blur-xl px-2 py-1.5 shadow-2xl"
       >
         {NAV_ITEMS.map((item) => {
           const isActive =
@@ -117,7 +117,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex h-11 items-center justify-center rounded-full px-4 font-mono text-[0.7rem] uppercase tracking-wider transition-all duration-300 ${
+              className={`flex h-10 items-center justify-center rounded-full px-4 font-mono text-[0.7rem] uppercase tracking-wider transition-all duration-300 ${
                 isActive
                   ? "bg-emerald-glow text-ink font-bold shadow-md"
                   : "text-cream-dim hover:text-cream"

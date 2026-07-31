@@ -24,8 +24,14 @@ export function Testimonials() {
         </p>
       </div>
 
-      {/* 3-Column Clean Editorial Testimonials Grid */}
-      <div className="grid divide-y md:divide-y-0 md:divide-x divide-line border-y border-line md:grid-cols-3">
+      {/* Editorial Testimonials Grid */}
+      <div className={`grid divide-y md:divide-y-0 md:divide-x divide-line border-y border-line ${
+        testimonials.length === 1
+          ? "grid-cols-1 max-w-3xl mx-auto"
+          : testimonials.length === 2
+          ? "md:grid-cols-2"
+          : "md:grid-cols-3"
+      }`}>
         {testimonials.map((t, i) => (
           <motion.div
             key={t.id}

@@ -14,7 +14,7 @@ const faqs: FAQItem[] = [
   {
     question: "Are you available for full-time hire or freelance contracts?",
     answer:
-      "Yes! As a 4th-year IT student graduating soon, I am actively open for Junior/Associate Full-Stack Developer roles, software contracts, and freelance projects. I can work remotely or locally in Davao City, PH.",
+      "Yes! As a 4th-year IT student graduating soon, I am actively open for Junior Developer roles, software contracts, and freelance projects. I can work remotely or locally in Davao City, PH.",
     category: "Hiring",
   },
   {
@@ -32,7 +32,7 @@ const faqs: FAQItem[] = [
   {
     question: "How do we get started on a project collaboration?",
     answer:
-      "Simply click 'Schedule Consultation' or email me at itzjoshuawayman@gmail.com with your project idea. We'll discuss requirements, outline tech architecture, set a clear timeline, and start building!",
+      "Simply click 'Schedule Consultation' or chat me at facebook joshua.a.arabejo with your project idea. We'll discuss requirements, outline tech architecture, set a clear timeline, and start building!",
     category: "Process",
   },
 ];

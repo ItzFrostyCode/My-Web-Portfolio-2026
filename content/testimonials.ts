@@ -13,31 +13,12 @@ export const testimonials: Testimonial[] = [
   {
     id: "1",
     quote:
-      "Joshua delivered our Supreme Student Council portal under an extraordinarily tight campaign timeline. The site was fast, responsive, and handled all student traffic seamlessly.",
-    author: "STI College Davao SSC",
-    role: "Student Council Executive",
+      "The SSC Website for AY 2025–2026 is extremely helpful, organized, and easily accessible. From its first version to its final release, the navigation became smoother, information easier to find, and the overall design looks truly professional and engaging.",
+    author: "Supreme Student Council President",
+    role: "AY 2025–2026 Student Leader",
     organization: "STI College Davao",
-    metric: "1,000+ Active Student Views",
-    initials: "SC",
+    metric: "930+ Students Served",
+    initials: "CP",
   },
-  {
-    id: "2",
-    quote:
-      "The VCCC management system streamlined our annual conference registrations. QR-code delegate check-ins cut our meal queue waiting time dramatically.",
-    author: "Ministry Event Team",
-    role: "Conference Coordinator",
-    organization: "Victory Chapel Davao",
-    metric: "500+ QR Badges Scanned",
-    initials: "ME",
-  },
-  {
-    id: "3",
-    quote:
-      "Joshua's attention to database structure and UI clarity turned complex paper workflows into simple, error-free desktop software.",
-    author: "Academic Advisory",
-    role: "Capstone & IT Evaluator",
-    organization: "STI College Davao",
-    metric: "98% System Efficiency Score",
-    initials: "AA",
-  },
+
 ];
